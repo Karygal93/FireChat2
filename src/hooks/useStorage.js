@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
-import { projectStorage, projectFirestore, timestamp } from '../firebase';
+import { projectStorage, projectFirestore, timestamp ,auth, db} from '../firebase';
 import SendMessage from '../Componets/SendMessage';
+import firebase from 'firebase'
+
+
 
 const useStorage = (file) => {
   const [progress, setProgress] = useState(0);
@@ -10,7 +13,6 @@ const useStorage = (file) => {
   useEffect(() => {
     // references
     const storageRef = projectStorage.ref(file.name);
-    const collectionRef = projectFirestore.collection('images');
     
     storageRef.put(file).on('state_changed', (snap) => {
       let percentage = (snap.bytesTransferred / snap.totalBytes) * 100;
@@ -18,10 +20,20 @@ const useStorage = (file) => {
     }, (err) => {
       setError(err);
     }, async () => {
-      const url = await storageRef.getDownloadURL();
+      const UploadImage = await storageRef.getDownloadURL();
+      const uid = auth.currentUser.uid;
+      const photoURL = auth.currentUser.photoURL;
+      const msg = "";
       const createdAt = timestamp();
-      await collectionRef.add({ url, createdAt });
-      setUrl(url);
+      
+
+      await db.collection('messages').add({
+        text: msg,
+        photoURL,
+        uid,
+        UploadImage,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    })
     });
   }, [file]);
 
